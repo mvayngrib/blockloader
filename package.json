@@ -1,0 +1,19 @@
+{
+  "name": "block-loader",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Mark Vayngrib <mark.vayngrib@lablz.com> (http://github.com/mvayngrib)",
+  "license": "MIT",
+  "dependencies": {
+    "bitcoinjs-lib": "^1.5.6",
+    "cb-blockr": "^3.1.1",
+    "extend": "^2.0.0",
+    "mkdirp": "^0.5.0",
+    "run-parallel": "^1.1.0",
+    "tx-walker": "^1.1.1"
+  }
+}

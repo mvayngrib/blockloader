@@ -46,6 +46,10 @@ BlockLoader.prototype.heights = function(heights, cb) {
   return this
 }
 
+BlockLoader.prototype.fromDB = function(height, cb) {
+  return this._db.get(height, cb)
+}
+
 // BlockLoader.prototype._fname = function(height) {
 //   return path.join(this._dir, '' + height)
 // }

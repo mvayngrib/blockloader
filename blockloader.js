@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 var levelup = require('levelup')
 var extend = require('extend')
 var Walker = require('tx-walker')

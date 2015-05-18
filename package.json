@@ -12,8 +12,11 @@
     "bitcoinjs-lib": "^1.5.6",
     "cb-blockr": "^3.1.1",
     "extend": "^2.0.0",
-    "mkdirp": "^0.5.0",
+    "levelup": "^1.1.0",
     "run-parallel": "^1.1.0",
     "tx-walker": "^1.1.1"
+  },
+  "devDependencies": {
+    "leveldown": "^1.0.6"
   }
 }

@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 var fs = require('fs')
 var mkdirp = require('mkdirp')
 var extend = require('extend')

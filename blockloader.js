@@ -1,3 +1,4 @@
+
 var fs = require('fs')
 var mkdirp = require('mkdirp')
 var extend = require('extend')
@@ -15,11 +16,11 @@ var walkerOpts = {
 function BlockLoader(options) {
   if (typeof options === 'string') options = { dir: options }
 
-  assert(options.dir, 'dir is required')
+  assert(options.dir, '"dir" is required')
 
-  this._walkerOpts = extend({}, walkerOpts, options)
   this._dir = options.dir
-  mkdirp.sync(this._dir)
+  this._walkerOpts = extend({}, walkerOpts, options)
+  mkdirp(options.dir)
 }
 
 BlockLoader.prototype.from = function(height) {
@@ -32,13 +33,15 @@ BlockLoader.prototype.to = function(height) {
   return this
 }
 
-BlockLoader.prototype.heights = function(heights) {
+BlockLoader.prototype.heights = function(heights, cb) {
   var self = this
   var sorted = heights.slice().sort(function(a, b) { return a - b })
 
-  this._batches = toBatches(sorted[0], sorted[sorted.length - 1], function(i) {
-    return heights.indexOf(i) === -1 || fs.existsSync(self._fname(i))
-  })
+  this._batches = toBatches(sorted[0], sorted[sorted.length - 1], function(i, skip) {
+    if (heights.indexOf(i) === -1) return cb(true) // zalgo
+
+    fs.exists(self._fname(i), skip) // skip if exists
+  }, cb)
 
   return this
 }
@@ -49,17 +52,20 @@ BlockLoader.prototype._fname = function(height) {
 
 BlockLoader.prototype.start = function(cb) {
   var self = this
+  var batches
 
   cb = cb || noop
 
   var dir = this._dir
   var from = this._from
   var to = this._to
-  var batches = this._batches || toBatches(from, to, function(i) {
-    return fs.existsSync(self._fname(i))
+  toBatches(from, to, function(i, skip) {
+    fs.exists(self._fname(i), skip) // skip if exists
+  }, function(_batches) {
+    batches = self._batches = _batches
+    next()
   })
 
-  next()
   return this
 
   function next() {
@@ -80,31 +86,47 @@ BlockLoader.prototype.start = function(cb) {
   }
 }
 
-function toBatches(from, to, skipTest) {
+function toBatches(from, to, skipTest, cb) {
   var batches = []
   var batch = {}
+  var nulls = nullArray(to - from + 1)
+  var togo = 0
+  nulls.forEach(function(nil, i) {
+    togo++
+    var height = from + i
+    skipTest(height, function(skip) {
+      if (skip) {
+        if ('from' in batch) {
+          batch.to = height - 1
+          batches.push(batch)
+          batch = {}
+        }
+      }
+      else {
+        if (!('from' in batch)) {
+          batch.from = height
+        }
+      }
 
-  for (var i = from; i <= to; i++) {
-    if (skipTest(i)) {
-      if ('from' in batch) {
-        batch.to = i - 1
-        batches.push(batch)
-        batch = {}
+      if (--togo === 0) {
+        if ('from' in batch) {
+          batch.to = height - 1
+          batches.push(batch)
+        }
+
+        cb(batches)
       }
-    }
-    else {
-      if (!('from' in batch)) {
-        batch.from = i
-      }
-    }
+    })
+  })
+}
+
+function nullArray(n) {
+  var arr = []
+  for (var i = 0; i < n; i++) {
+    arr.push(null)
   }
 
-  if ('from' in batch) {
-    batch.to = i - 1
-    batches.push(batch)
-  }
-
-  return batches
+  return arr
 }
 
 module.exports = BlockLoader

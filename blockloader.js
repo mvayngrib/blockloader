@@ -1,19 +1,17 @@
-
 var fs = require('fs')
 var mkdirp = require('mkdirp')
 var extend = require('extend')
 var Walker = require('tx-walker')
-var bitcoin = require('bitcoinjs-lib')
 var path = require('path')
 var assert = require('assert')
-var noop = function() {}
+var noop = function () {}
 var walkerOpts = {
   networkName: 'testnet',
   batchSize: 5,
   throttle: 5000
 }
 
-function BlockLoader(options) {
+function BlockLoader (options) {
   if (typeof options === 'string') options = { dir: options }
 
   assert(options.dir, '"dir" is required')
@@ -23,62 +21,75 @@ function BlockLoader(options) {
   mkdirp(options.dir)
 }
 
-BlockLoader.prototype.from = function(height) {
+BlockLoader.prototype.from = function (height) {
   this._from = height
   return this
 }
 
-BlockLoader.prototype.to = function(height) {
+BlockLoader.prototype.to = function (height) {
   this._to = height
   return this
 }
 
-BlockLoader.prototype.heights = function(heights, cb) {
-  var self = this
-  var sorted = heights.slice().sort(function(a, b) { return a - b })
-
-  this._batches = toBatches(sorted[0], sorted[sorted.length - 1], function(i, skip) {
-    if (heights.indexOf(i) === -1) return cb(true) // zalgo
-
-    fs.exists(self._fname(i), skip) // skip if exists
-  }, cb)
-
+BlockLoader.prototype.heights = function (heights) {
+  this._heights = heights
   return this
 }
 
-BlockLoader.prototype._fname = function(height) {
+BlockLoader.prototype._fname = function (height) {
   return path.join(this._dir, '' + height)
 }
 
-BlockLoader.prototype.start = function(cb) {
+BlockLoader.prototype.start = function (cb) {
   var self = this
-  var batches
 
   cb = cb || noop
+  if (this._loading) {
+    this._cb = cb
+    return
+  }
 
-  var dir = this._dir
-  var from = this._from
-  var to = this._to
-  toBatches(from, to, function(i, skip) {
-    fs.exists(self._fname(i), skip) // skip if exists
-  }, function(_batches) {
+  var batches
+  var heights = this._heights
+  var from
+  var to
+  if (heights) {
+    from = heights.reduce(function (memo, height) {
+      return Math.min(memo, height)
+    }, Infinity)
+
+    to = heights.reduce(function (memo, height) {
+      return Math.max(memo, height)
+    }, -Infinity)
+  } else {
+    from = this._from
+    to = this._to
+  }
+
+  toBatches(from, to, function (i, skip) {
+    if (heights && heights.indexOf(i) === -1) {
+      skip(true) // zalgo
+    } else {
+      fs.exists(self._fname(i), skip) // skip if exists
+    }
+  }, function (_batches) {
     batches = self._batches = _batches
     next()
   })
 
   return this
 
-  function next() {
+  function next () {
     if (!batches.length) return cb()
 
     var batch = batches.shift()
-    var walker = new Walker(walkerOpts)
+    new Walker(walkerOpts)
       .from(batch.from)
       .to(batch.to)
-      .on('blockend', function(block, height) {
+      .on('blockend', function (block, height) {
         fs.writeFile(self._fname(height), block.toHex())
       })
-      .on('error', function(err) {
+      .on('error', function (err) {
         console.log(err)
       })
       .on('stop', next)
@@ -86,23 +97,22 @@ BlockLoader.prototype.start = function(cb) {
   }
 }
 
-function toBatches(from, to, skipTest, cb) {
+function toBatches (from, to, skipTest, cb) {
   var batches = []
   var batch = {}
   var nulls = nullArray(to - from + 1)
   var togo = 0
-  nulls.forEach(function(nil, i) {
+  nulls.forEach(function (nil, i) {
     togo++
     var height = from + i
-    skipTest(height, function(skip) {
+    skipTest(height, function (skip) {
       if (skip) {
         if ('from' in batch) {
           batch.to = height - 1
           batches.push(batch)
           batch = {}
         }
-      }
-      else {
+      } else {
         if (!('from' in batch)) {
           batch.from = height
         }
@@ -120,7 +130,7 @@ function toBatches(from, to, skipTest, cb) {
   })
 }
 
-function nullArray(n) {
+function nullArray (n) {
   var arr = []
   for (var i = 0; i < n; i++) {
     arr.push(null)

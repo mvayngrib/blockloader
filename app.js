@@ -1,8 +1,5 @@
 #!/usr/bin/env node
 
-var fs = require('fs')
-var mkdirp = require('mkdirp')
-var Walker = require('tx-walker')
 var path = require('path')
 var args = process.argv.slice(2)
 var from = Number(args[0])

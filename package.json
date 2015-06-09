@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "pre-commit": "^1.0.7",
-    "standard": "^3.11.1"
+    "standard": "^3.11.1",
+    "tape": "^4.0.0"
   }
 }

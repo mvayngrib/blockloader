@@ -9,7 +9,7 @@ function Blockchain (options) {
 
   assert(options.dir, 'dir is required')
   this._dir = options.dir
-  this._blockLoader = new BlockLoader(options)
+  this._blockLoader = options.loader || new BlockLoader(options)
   this.blocks.get = this.blocks.get.bind(this)
 }
 
@@ -24,7 +24,7 @@ Blockchain.prototype.blocks = {
 
         parallel(heights.map(function (height) {
           var bPath = path.join(path.resolve(self._dir), '' + height)
-          return fs.readFile.bind(fs, bPath, { encoding: 'binary' })
+          return fs.readFile.bind(fs, bPath)
         }), function (err, results) {
           if (err) return cb(err)
 

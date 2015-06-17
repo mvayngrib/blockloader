@@ -10,8 +10,13 @@ function FakeChain (options) {
   this.height = options.height
   this._blocks = []
   this._writing = 0
-  this.blocks.get = this.blocks.get.bind(this)
-  this.transactions.propagate = this.transactions.propagate.bind(this)
+  this.blocks = {
+    get: BLOCKS.get.bind(this)
+  }
+
+  this.transactions = {
+    propagate: TXS.propagate.bind(this)
+  }
 }
 
 module.exports = FakeChain
@@ -86,13 +91,13 @@ FakeChain.prototype.addBlock = function (block, height) {
 // 	unspents:
 // }
 
-FakeChain.prototype.transactions = {
+var TXS = {
   propagate: function (tx) {
     this.addTxs(tx)
   }
 }
 
-FakeChain.prototype.blocks = {
+var BLOCKS = {
   get: function (heights, cb) {
     var self = this
 

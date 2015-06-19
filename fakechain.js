@@ -47,7 +47,16 @@ FakeChain.prototype._blockAt = function (height) {
 }
 
 FakeChain.prototype.addTxs = function (txs, height) {
-  txs = [].concat(txs)
+  txs = [].concat(txs).map(function (tx) {
+    if (typeof tx === 'string') tx = bitcoin.Transaction.fromHex(tx)
+    else if (Buffer.isBuffer(tx)) tx = bitcoin.Transaction.fromBuffer(tx)
+    else if (!tx.toHex) {
+      throw new Error('"tx" must be Transaction, Buffer or transaction hex string')
+    }
+
+    return tx
+  })
+
   height = height || this.height || 0
   if (!this.height) this.height = height
 
@@ -71,8 +80,6 @@ FakeChain.prototype.addBlock = function (block, height) {
   } else if (Buffer.isBuffer(block)) {
     block = bitcoin.Block.fromBuffer(block)
   } else if (!block.toHex) {
-    // block instance
-  } else {
     throw new Error('"block" must be Block, Buffer or block hex string')
   }
 

@@ -36,7 +36,7 @@ FakeChain.prototype.addNewTx = function (fromPrivKey, toPrivKey, OP_RETURN) {
 
   tx.sign(0, fromPrivKey)
   // no need to sign fake tx
-  return this.addTx(tx)
+  return this.addTxs(tx)
 }
 
 FakeChain.prototype._blockAt = function (height) {

@@ -17,6 +17,10 @@ function FakeChain (options) {
   this.transactions = {
     propagate: TXS.propagate.bind(this)
   }
+
+  this.addresses = {
+    transactions: ADDRS.transactions.bind(this)
+  }
 }
 
 module.exports = FakeChain
@@ -121,4 +125,43 @@ var BLOCKS = {
 
     cb(null, blocks)
   }
+}
+
+var ADDRS = {
+  transactions: function (addresses, height, cb) {
+    var matchingTxs = this._blocks.reduce(function (txs, b) {
+      var bTxs = b.transactions.filter(function (tx) {
+        return getOutputAddresses(tx).some(function (addr) {
+          return addresses.indexOf(addr) !== -1
+        })
+      })
+
+      txs.push.apply(txs, bTxs.map(function (tx) {
+        return {
+          txHex: tx.toHex(),
+          blockHeight: b.height
+        }
+      }))
+
+      return txs
+    }, [])
+
+    if (!matchingTxs.length) return cb(new Error('no txs found'))
+
+    cb(null, matchingTxs)
+  }
+}
+
+function getOutputAddresses (tx) {
+  return tx.outs.reduce(function (addrs, output) {
+    if (bitcoin.scripts.classifyOutput(output.script) === 'pubkeyhash') {
+      var addr = bitcoin.Address
+        .fromOutputScript(output.script, bitcoin.networks.testnet)
+        .toString()
+
+      addrs.push(addr)
+    }
+
+    return addrs
+  }, [])
 }

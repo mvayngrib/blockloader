@@ -129,7 +129,15 @@ var BLOCKS = {
 
 var ADDRS = {
   transactions: function (addresses, height, cb) {
+    if (typeof height === 'function') {
+      cb = height
+      height = 0
+    }
+
+    height = height || 0
     var matchingTxs = this._blocks.reduce(function (txs, b) {
+      if (b.height < height) return txs
+
       var bTxs = b.transactions.filter(function (tx) {
         return getOutputAddresses(tx).some(function (addr) {
           return addresses.indexOf(addr) !== -1
